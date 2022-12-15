@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # ---- project ----
 
-project("cmake-glad-generator" VERSION "1.0.0" LANGUAGES "C"
+project("cmake-glad-generator" VERSION "1.1.0" LANGUAGES "C"
   HOMEPAGE_URL "https://github.com/robertefry/cmake-glad-generator"
   DESCRIPTION "Generate GLAD OpenGL loaders on demand")
 
@@ -19,30 +19,27 @@ CPMAddPackage(NAME "glad"
   GITHUB_REPOSITORY "Dav1dde/glad" GIT_TAG ${GLAD_GIT_TAG}
 )
 
-# ---- glad generator ----
-
-set(BINARY_NAME "glad2")
-add_library(${BINARY_NAME} STATIC "")
+# ---- generate glad sources ----
 
 set(GEN_GLAD_API "core=1.0" CACHE STRING "The version of OpenGL to generate a loader for.")
 set(GEN_GLAD_OPTS "" CACHE STRING "The generator options.")
 
-add_custom_target(build-glad-generator ALL
+message(STATUS "Building the GLAD generator")
+execute_process(
   COMMAND ${PYTHON_EXECUTABLE} setup.py build
-  WORKING_DIRECTORY ${glad_SOURCE_DIR}
-  COMMENT "Building the GLAD generator"
-  VERBATIM)
+  WORKING_DIRECTORY ${glad_SOURCE_DIR})
 
-add_custom_target(run-glad-generator ALL
+message(STATUS "Running the GLAD generator")
+execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -m glad
     --out-path ${CMAKE_CURRENT_SOURCE_DIR}
     --api gl:${GEN_GLAD_API} c ${GEN_GLAD_OPTS}
-  WORKING_DIRECTORY ${glad_SOURCE_DIR}
-  DEPENDS "build-glad-generator"
-  COMMENT "Running the GLAD generator"
-  VERBATIM)
+  WORKING_DIRECTORY ${glad_SOURCE_DIR})
 
-add_dependencies(${BINARY_NAME} run-glad-generator)
+# ---- project target ----
+
+set(BINARY_NAME "glad2")
+add_library(${BINARY_NAME} STATIC "")
 
 target_include_directories(${BINARY_NAME}
   PUBLIC
